@@ -1,0 +1,28 @@
+use crate::SensorValue;
+use log::error;
+use reqwest::{self, Client};
+
+pub struct HomeAutomation {
+    client: Client,
+    url: String,
+}
+
+impl HomeAutomation {
+    pub fn new(url: String) -> HomeAutomation {
+        HomeAutomation {
+            client: Client::new(),
+            url,
+        }
+    }
+
+    pub async fn handle(&self, data: &SensorValue) -> Result<(), reqwest::Error> {
+        self.client.post(&self.url).form(data).send().await?;
+        Ok(())
+    }
+
+    pub fn log_any_error(res: Result<(), reqwest::Error>) {
+        if let Err(e) = res {
+            error!("error during sending: {}", e);
+        }
+    }
+}
