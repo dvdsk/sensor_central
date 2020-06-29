@@ -36,7 +36,6 @@ impl Line {
         LittleEndian::write_u64(&mut line[2..10], self.key);
 
         for (field, value) in self.fields.iter().zip(&mut self.values) {
-            dbg!(&value);
             field.encode::<f32>(value.unwrap(), &mut line);
             *value = None;
         }
@@ -70,8 +69,6 @@ impl Dataserver {
 
         if self.connected.is_complete() {
             let line = self.connected.encode();
-            dbg!(&self.url);
-            dbg!(&line);
             self.client.post(&self.url).body(line).send().await?; //check this
         }
 
