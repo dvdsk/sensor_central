@@ -55,7 +55,7 @@ where
         numb -= num::cast(self.decode_add).unwrap();
         numb /= num::cast(self.decode_scale).unwrap();
         //println!("scale: {}, add: {}, numb: {}", self.decode_scale, self.decode_add, numb);
-
+        println!("numb: {}", numb);
         let to_encode: u32 = num::cast(numb).unwrap();
 
         compression::encode(to_encode, line, self.offset, self.length);

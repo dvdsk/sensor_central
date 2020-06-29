@@ -16,7 +16,8 @@ impl HomeAutomation {
     }
 
     pub async fn handle(&self, data: &SensorValue) -> Result<(), reqwest::Error> {
-        self.client.post(&self.url).form(data).send().await?;
+        let encoded: Vec<u8> = bincode::serialize(&data).unwrap();
+        self.client.post(&self.url).body(encoded).send().await?;
         Ok(())
     }
 

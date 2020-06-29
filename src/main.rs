@@ -11,6 +11,7 @@ mod sensors;
 #[derive(StructOpt)]
 #[structopt(name = "sensor_central")]
 struct Opt {
+    /// dataserver port
     #[structopt(short = "p", long = "port", default_value = "38972")]
     port: u16,
     /// full domain including any possible www prefix
@@ -26,6 +27,9 @@ struct Opt {
     /// home automation domain
     #[structopt(short = "a", long = "ha-domain")]
     ha_domain: String,
+    /// home automation port
+    #[structopt(short = "o", long = "ha-port")]
+    ha_port: u16,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -41,7 +45,8 @@ async fn main() {
     let opt = Opt::from_args();
     let _ = SimpleLogger::init(LevelFilter::Info, Config::default());
     let dataserver_url = format!("https://{}:{}/post_data", opt.domain, opt.port);
-    let ha_url = format!("https://{}:{}/post_data", opt.ha_domain, opt.ha_key);
+    let ha_url = format!("https://{}:{}/{}", 
+        opt.ha_domain, opt.ha_port, opt.ha_key);
 
     let mut dataserver = backend::Dataserver::new(opt.node_id, opt.dataserver_key, dataserver_url);
     let home_automation = backend::HomeAutomation::new(ha_url);

@@ -18,7 +18,7 @@ impl Line {
         Line {
             id,
             key,
-            values: Vec::with_capacity(fields.len()),
+            values: vec![None; fields.len()],
             fields,
         }
     }
@@ -26,17 +26,17 @@ impl Line {
     fn is_complete(&self) -> bool {
         self.values
             .iter()
-            .filter(|x| x.is_some())
             .fold(true, |acc, x| acc && x.is_some())
     }
     fn encode(&mut self) -> Vec<u8> {
-        let len: usize = 10usize + self.fields.iter().map(|x| x.length as usize).sum::<usize>();
-        let mut line = vec![0u8; (len + 8 - 1) / 8];
+        let len: usize = self.fields.iter().map(|x| x.length as usize).sum::<usize>();
+        let mut line = vec![0u8; 10+(len + 8 - 1) / 8];
 
         LittleEndian::write_u16(&mut line[0..2], self.id);
         LittleEndian::write_u64(&mut line[2..10], self.key);
 
         for (field, value) in self.fields.iter().zip(&mut self.values) {
+            dbg!(&value);
             field.encode::<f32>(value.unwrap(), &mut line);
             *value = None;
         }
@@ -70,7 +70,9 @@ impl Dataserver {
 
         if self.connected.is_complete() {
             let line = self.connected.encode();
-            self.client.post(&self.url).form(&line).send().await?; //check this
+            dbg!(&self.url);
+            dbg!(&line);
+            self.client.post(&self.url).body(line).send().await?; //check this
         }
 
         Ok(())
@@ -85,21 +87,21 @@ impl Dataserver {
 
 ////////// List of fields //////////////
 pub const TEMPERATURE: Field<f32> = Field {
-    offset: 10, //bits
+    offset: 80, //bits
     length: 13, //bits (max 32 bit variables)
 
     decode_scale: 0.009999999776482582,
     decode_add: -20.0f32,
 };
 pub const HUMIDITY: Field<f32> = Field {
-    offset: 10 + TEMPERATURE.length,
+    offset: 80 + TEMPERATURE.length,
     length: 14,
 
     decode_scale: 0.00800000037997961,
     decode_add: 0.0,
 };
 pub const PRESSURE: Field<f32> = Field {
-    offset: 10 + TEMPERATURE.length + HUMIDITY.length,
+    offset: 80 + TEMPERATURE.length + HUMIDITY.length,
     length: 19,
 
     decode_scale: 0.18000000715255738,
