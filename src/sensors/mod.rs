@@ -3,6 +3,7 @@ use std::thread;
 use std::time::Duration;
 
 mod local;
+mod ble;
 use super::SensorValue;
 
 pub fn start_monitoring(s: Sender<SensorValue>) {

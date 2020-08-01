@@ -38,6 +38,7 @@ pub enum SensorValue {
     Temperature(f32),
     Humidity(f32),
     Pressure(f32),
+    Test(f32),
 }
 
 #[tokio::main]

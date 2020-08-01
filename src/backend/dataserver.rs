@@ -3,7 +3,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use log::error;
 use reqwest::{self, Client};
 
-use super::fields::Field;
+pub use super::fields::Field;
 
 #[derive(Default)]
 struct Line {
@@ -28,6 +28,7 @@ impl Line {
             .iter()
             .fold(true, |acc, x| acc && x.is_some())
     }
+    
     fn encode(&mut self) -> Vec<u8> {
         let len: usize = self.fields.iter().map(|x| x.length as usize).sum::<usize>();
         let mut line = vec![0u8; 10+(len + 8 - 1) / 8];

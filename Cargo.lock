@@ -67,6 +67,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
+name = "bluebus"
+version = "0.2.0"
+source = "git+https://github.com/dskleingeld/bluebus#0c3e218fbdf458a1b23bc4afa786120877d2d48c"
+dependencies = [
+ "nix 0.17.0",
+ "rustbus",
+]
+
+[[package]]
 name = "bme280"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -978,6 +987,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustbus"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3915e2eb9a291748a5c9e74821be7e214646cdd07bc9bce5da08e5d0313921d7"
+dependencies = [
+ "nix 0.17.0",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1060,6 +1078,7 @@ name = "sensor_central"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "bluebus",
  "bme280",
  "byteorder",
  "crossbeam-channel",
