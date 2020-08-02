@@ -2,8 +2,7 @@ use crate::SensorValue;
 use byteorder::{ByteOrder, LittleEndian};
 use log::error;
 use reqwest::{self, Client};
-
-pub use super::fields::Field;
+use bitspec::Field;
 
 #[derive(Default)]
 struct Line {

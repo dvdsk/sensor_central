@@ -1,4 +1,4 @@
-use super::*;
+use bitspec::Field;
 
 pub struct DeviceInfo {
     pub adress: &'static str,

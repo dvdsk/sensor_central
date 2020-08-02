@@ -9,7 +9,6 @@ use nix::poll::{poll, PollFd, PollFlags};
 
 use crate::error::Error;
 use crate::SensorValue;
-use crate::backend::Field;
 
 mod info;
 use info::{DeviceInfo, SENSORS};
