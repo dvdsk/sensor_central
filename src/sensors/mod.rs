@@ -4,19 +4,25 @@ use std::time::Duration;
 
 mod local;
 mod ble;
-use super::SensorValue;
+use crate::{SensorValue, Sensor};
 
-pub fn start_monitoring(s: Sender<SensorValue>) {
+pub fn start_monitoring(s1: Sender<SensorValue>, ble_key: String) {
+    let s2 = s1.clone();
     thread::spawn(move || {
         let mut local_sensors = local::init();
         loop {
             //get all measurements
             let (hum, temp, pressure) = local::measure_and_record(&mut local_sensors);
-            s.send(SensorValue::Temperature(temp)).unwrap();
-            s.send(SensorValue::Humidity(hum)).unwrap();
-            s.send(SensorValue::Pressure(pressure)).unwrap();
+            s2.send(SensorValue::Float(Sensor::Temperature, temp)).unwrap();
+            s2.send(SensorValue::Float(Sensor::Humidity, hum)).unwrap();
+            s2.send(SensorValue::Float(Sensor::Pressure, pressure)).unwrap();
 
             std::thread::sleep(Duration::from_secs(5));
         }
+    });
+
+    thread::spawn(move || {
+        let mut sensors = ble::BleSensors::new(ble_key).unwrap();
+        sensors.handle(s1);
     });
 }

@@ -1,3 +1,5 @@
+#![feature(drain_filter)]
+
 use crossbeam_channel::bounded;
 use serde::{Deserialize, Serialize};
 use simplelog::{Config, LevelFilter, SimpleLogger};
@@ -30,15 +32,23 @@ struct Opt {
     /// home automation port
     #[structopt(short = "o", long = "ha-port")]
     ha_port: u16,
+    // ble authentication key
+    #[structopt(long = "ble-key")]
+    ble_key: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum Sensor {
+    Temperature,
+    Humidity,
+    Pressure,
+    Test,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum SensorValue {
     ButtonPress(buttons::Press),
-    Temperature(f32),
-    Humidity(f32),
-    Pressure(f32),
-    Test(f32),
+    Float(Sensor, f32),
 }
 
 #[tokio::main]
@@ -54,7 +64,7 @@ async fn main() {
     let (s, r) = bounded(10);
 
     buttons::start_monitoring(s.clone()).unwrap();
-    sensors::start_monitoring(s);
+    sensors::start_monitoring(s, opt.ble_key.clone());
 
     loop {
         let data = r.recv().unwrap();

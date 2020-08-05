@@ -1,4 +1,4 @@
-use crate::SensorValue;
+use crate::{SensorValue, Sensor};
 use byteorder::{ByteOrder, LittleEndian};
 use log::error;
 use reqwest::{self, Client};
@@ -61,9 +61,9 @@ impl Dataserver {
 
     pub async fn handle(&mut self, data: &SensorValue) -> Result<(), reqwest::Error> {
         match data {
-            SensorValue::Temperature(v) => self.connected.values[0] = Some(*v),
-            SensorValue::Humidity(v) => self.connected.values[1] = Some(*v),
-            SensorValue::Pressure(v) => self.connected.values[2] = Some(*v),
+            SensorValue::Float(Sensor::Temperature ,v) => self.connected.values[0] = Some(*v),
+            SensorValue::Float(Sensor::Humidity, v) => self.connected.values[1] = Some(*v),
+            SensorValue::Float(Sensor::Pressure, v) => self.connected.values[2] = Some(*v),
             _ => return Ok(()),
         }
 
