@@ -47,6 +47,7 @@ pub enum Sensor {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum SensorValue {
+    #[cfg(feature = "local")]
     ButtonPress(buttons::Press),
     Float(Sensor, f32),
 }
@@ -63,8 +64,11 @@ async fn main() {
     let home_automation = backend::HomeAutomation::new(ha_url);
     let (s, r) = bounded(10);
 
+    #[cfg(feature = "local")]
     buttons::start_monitoring(s.clone()).unwrap();
     sensors::start_monitoring(s, opt.ble_key.clone());
+    
+    loop {}
 
     loop {
         let data = r.recv().unwrap();

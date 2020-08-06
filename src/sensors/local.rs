@@ -1,3 +1,5 @@
+#![cfg(feature = "local")]
+
 use bme280;
 use linux_embedded_hal as hal;
 

@@ -1,6 +1,9 @@
+#[cfg(feature = "ble")]
+
 use std::time::{Duration, Instant};
 use std::fs::{File};
 use std::io::Read;
+use std::thread;
 use crossbeam_channel::Sender;
 use std::os::unix::io::{RawFd, FromRawFd};
 
@@ -20,12 +23,11 @@ use localisation::{DeviceInfo, UuidInfo, SENSORS};
 mod error;
 use error::ConnectionError;
 
-const SEC_CHAR_UUID: &'static str = "93700003-1bb7-1599-985b-f5e7dc991483";
+const SEC_CHAR_UUID: &'static str = "93700004-1bb7-1599-985b-f5e7dc991483";
 
 pub struct BleSensors {
     disconnected: Vec<DeviceInfo>,
     connected: Vec<DeviceInfo>,
-    //sensors: &'a[DeviceInfo],
     notify_streams: NotifyStreams,
 
     ble: Ble,
@@ -43,7 +45,6 @@ fn has_io(pollable: &PollFd) -> bool {
 
 #[derive(Default)]
 struct NotifyStreams {
-    //fds: Vec<RawFd>,
     pollables: Vec<PollFd>,
     files: Vec<File>,
     infos: Vec<UuidInfo>,
@@ -95,11 +96,16 @@ impl NotifyStreams {
 const PAIRING_TIMEOUT: Duration = Duration::from_secs(15);
 impl BleSensors {
     pub fn new(ble_key: String) -> Result<Self, Error> {
-        let ble = BleBuilder::new().build()?;
+        let mut ble = BleBuilder::new().build()?;
+        ble.start_discovery()?;
+        thread::sleep(Duration::from_secs(5));
+        ble.stop_discovery()?;
+
         let mut key = [0u8; 16];
         key[..usize::min(ble_key.len(),16)]
             .copy_from_slice(ble_key.as_str().as_bytes());
 
+        dbg!(key);
         Ok(BleSensors{
             disconnected: SENSORS.to_vec(),
             connected: Vec::new(),
@@ -115,9 +121,11 @@ impl BleSensors {
         let connected = &mut self.connected;
         let disconnected = &mut self.disconnected;
         let notify_streams = &mut self.notify_streams;
+        let ble = &mut self.ble;
+        let key = &self.key;
 
         disconnected.drain_filter(|device| {
-            let res = self.connect_device(device);
+            let res = Self::connect_device(ble, device, key);
             match res {
                 Ok(fds) => {
                     connected.push(device.clone());
@@ -126,8 +134,7 @@ impl BleSensors {
                 }
                 Err(e) => {
                     if !e.is_recoverable() {
-                        panic!("ran into unrecoverable error during connection of 
-                        device: {}, error was: {:?}", device.adress, e);
+                        panic!("ran into unrecoverable error during connection of device: {}, error was: {:?}", device.adress, e);
                     }
                     false //keep device in disconnected
                 }
@@ -136,42 +143,44 @@ impl BleSensors {
         Ok(())
     }
 
-    fn connect_device(&mut self, device: &DeviceInfo)
+    fn connect_device(ble: &mut Ble, device: &DeviceInfo, key: &[u8;16])
      -> Result<Vec<RawFd>, ConnectionError> {
     
-        self.ble.connect(device.adress)?;
-        let get_key = self.setup_key(device.adress)?;
-        self.ble.pair(device.adress, get_key, PAIRING_TIMEOUT)?;
+        dbg!(&device.adress);
+        ble.connect(device.adress)?;
+        let get_key = Self::setup_key(ble, device.adress, key)?;
+        ble.pair(device.adress, get_key, PAIRING_TIMEOUT)?;
         
         let test: Result<Vec<RawFd>, bluebus::Error> = device.values
             .iter()
-            .map(|u| self.ble.notify(device.adress, u.uuid))
+            .map(|u| ble.notify(device.adress, u.uuid))
             .collect();
         let test = test?; //TODO cleanup
         Ok(test)
     }
 
-    fn setup_key(&mut self, adress: &str) -> Result<impl Fn() -> u32, bluebus::Error> {
+    fn setup_key(ble: &mut Ble, adress: &str, key: &[u8;16]) -> Result<impl Fn() -> u32, bluebus::Error> {
         let mut rng = rand::thread_rng();
         let nonce: u32 = rng.gen_range(0, 999999);
         let mut nonce_array = [0u8; 16];
         nonce_array[..4].copy_from_slice(&nonce.to_be_bytes());
+        dbg!(nonce_array);
 
         dbg!(nonce);
-        let cipher = Aes128::new(GenericArray::from_slice(&self.key));
+        let cipher = Aes128::new(GenericArray::from_slice(key));
         let mut block = GenericArray::from_mut_slice(&mut nonce_array);
         cipher.encrypt_block(&mut block);
         dbg!(nonce_array);
 
-        self.ble.write(adress, SEC_CHAR_UUID, nonce_array)?;
+        ble.write(adress, SEC_CHAR_UUID, nonce_array)?;
         let get_key = move || nonce;
         Ok(get_key)
     }
 
     fn check_for_disconnects(&mut self) {
         let connected = &mut self.connected;
-        let ble = &mut self.ble;
         let notify_streams = &mut self.notify_streams;
+        let ble = &mut self.ble;
 
         connected.drain_filter(|device| {
             if ble.is_connected(device.adress).unwrap() {

@@ -1,3 +1,5 @@
+#![cfg(feature = "local")]
+
 use gpio_cdev::{Chip, EventRequestFlags, LineEventHandle, LineRequestFlags};
 use log::error;
 use nix::poll::{poll, PollFd, PollFlags};

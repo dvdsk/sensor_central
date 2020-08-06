@@ -8,6 +8,7 @@ use crate::{SensorValue, Sensor};
 
 pub fn start_monitoring(s1: Sender<SensorValue>, ble_key: String) {
     let s2 = s1.clone();
+    #[cfg(feature = "local")]
     thread::spawn(move || {
         let mut local_sensors = local::init();
         loop {
@@ -21,6 +22,7 @@ pub fn start_monitoring(s1: Sender<SensorValue>, ble_key: String) {
         }
     });
 
+    #[cfg(feature = "ble")]
     thread::spawn(move || {
         let mut sensors = ble::BleSensors::new(ble_key).unwrap();
         sensors.handle(s1);
