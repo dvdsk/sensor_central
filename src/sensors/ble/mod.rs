@@ -1,4 +1,4 @@
-#[cfg(feature = "ble")]
+#![cfg(feature = "ble")]
 
 use std::time::{Duration, Instant};
 use std::fs::{File};
@@ -10,10 +10,9 @@ use std::os::unix::io::{RawFd, FromRawFd};
 use bluebus::{BleBuilder, Ble};
 use nix::poll::{poll, PollFd, PollFlags};
 
-use aes::Aes128;
-use aes::block_cipher::{BlockCipher, NewBlockCipher};
-use aes::block_cipher::generic_array::GenericArray;
-use rand::Rng;
+use aes_gcm::Aes128Gcm;
+use aes_gcm::aead::{Aead, NewAead, generic_array::GenericArray};
+use rand::{thread_rng, Rng};
 
 use crate::error::Error;
 use crate::SensorValue;
@@ -23,7 +22,29 @@ use localisation::{DeviceInfo, UuidInfo, SENSORS};
 mod error;
 use error::ConnectionError;
 
-const SEC_CHAR_UUID: &'static str = "93700004-1bb7-1599-985b-f5e7dc991483";
+const NONCE_CHAR_UUID: &'static str = "93700004-1bb7-1599-985b-f5e7dc991483";
+const PIN_CHAR_UUID: &'static str = "93700005-1bb7-1599-985b-f5e7dc991483";
+
+
+pub struct Key {
+    array: [u8;16],
+}
+
+impl std::str::FromStr for Key {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.trim();
+        let s = s.trim_start_matches("[");
+        let s = s.trim_end_matches("]");
+
+        let mut array = [0u8;16];
+        for (byte, numb) in array.iter_mut().zip(s.split(",")){
+            *byte = numb.parse::<u8>()?;
+        }
+        Ok(Self{array})
+    }
+}
 
 pub struct BleSensors {
     disconnected: Vec<DeviceInfo>,
@@ -95,17 +116,12 @@ impl NotifyStreams {
 
 const PAIRING_TIMEOUT: Duration = Duration::from_secs(15);
 impl BleSensors {
-    pub fn new(ble_key: String) -> Result<Self, Error> {
+    pub fn new(ble_key: Key) -> Result<Self, Error> {
         let mut ble = BleBuilder::new().build()?;
         ble.start_discovery()?;
         thread::sleep(Duration::from_secs(5));
         ble.stop_discovery()?;
 
-        let mut key = [0u8; 16];
-        key[..usize::min(ble_key.len(),16)]
-            .copy_from_slice(ble_key.as_str().as_bytes());
-
-        dbg!(key);
         Ok(BleSensors{
             disconnected: SENSORS.to_vec(),
             connected: Vec::new(),
@@ -113,7 +129,7 @@ impl BleSensors {
             notify_streams: NotifyStreams::default(),
             
             ble,
-            key,
+            key: ble_key.array,
         })
     }
 
@@ -146,7 +162,6 @@ impl BleSensors {
     fn connect_device(ble: &mut Ble, device: &DeviceInfo, key: &[u8;16])
      -> Result<Vec<RawFd>, ConnectionError> {
     
-        dbg!(&device.adress);
         ble.connect(device.adress)?;
         let get_key = Self::setup_key(ble, device.adress, key)?;
         ble.pair(device.adress, get_key, PAIRING_TIMEOUT)?;
@@ -160,20 +175,27 @@ impl BleSensors {
     }
 
     fn setup_key(ble: &mut Ble, adress: &str, key: &[u8;16]) -> Result<impl Fn() -> u32, bluebus::Error> {
+        const NONCE_SIZE: usize = 12;
+        const MAC_SIZE: usize = 6;
+
         let mut rng = rand::thread_rng();
-        let nonce: u32 = rng.gen_range(0, 999999);
-        let mut nonce_array = [0u8; 16];
-        nonce_array[..4].copy_from_slice(&nonce.to_be_bytes());
-        dbg!(nonce_array);
 
-        dbg!(nonce);
-        let cipher = Aes128::new(GenericArray::from_slice(key));
-        let mut block = GenericArray::from_mut_slice(&mut nonce_array);
-        cipher.encrypt_block(&mut block);
-        dbg!(nonce_array);
+        let cipher = Aes128Gcm::new(GenericArray::from_slice(key));
+        
+        let mut nonce = [0u8; NONCE_SIZE];
+        rng.fill(&mut nonce[..]);
+        let nonce = GenericArray::from_slice(&nonce);
 
-        ble.write(adress, SEC_CHAR_UUID, nonce_array)?;
-        let get_key = move || nonce;
+        let pin: u32 = rng.gen_range(0, 999999);
+        let mut pin_array = [0u8; 4];
+        pin_array[..4].copy_from_slice(&pin.to_be_bytes());
+
+        let ciphertext = cipher.encrypt(nonce, pin_array.as_ref())
+        .expect("encryption failure!"); // NOTE: handle this error to avoid panics!
+        
+        ble.write(adress, NONCE_CHAR_UUID, nonce)?;
+        ble.write(adress, PIN_CHAR_UUID, ciphertext)?;
+        let get_key = move || pin;
         Ok(get_key)
     }
 
@@ -206,4 +228,11 @@ impl BleSensors {
             self.notify_streams.handle(&mut buffer, &mut s);
         }
     }
+}
+
+pub fn start_monitoring(s: Sender<SensorValue>, ble_key: Key) {
+    thread::spawn(move || {
+        let mut sensors = BleSensors::new(ble_key).unwrap();
+        sensors.handle(s);
+    });
 }

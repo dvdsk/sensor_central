@@ -7,7 +7,7 @@ edition = "2018"
 [features]
 default = ["local", "ble"]
 local = ["gpio-cdev"]
-ble = ["bluebus", "aes", "rand"]
+ble = ["bluebus", "aes-gcm", "rand"]
 
 [dependencies]
 tokio = { version = "0.2", features = ["full"] }
@@ -34,5 +34,5 @@ crossbeam-channel = "0.4"
 bitspec = { git = "https://github.com/dskleingeld/bitspec" }
 bluebus = { git = "https://github.com/dskleingeld/bluebus", optional = true }
 
-aes = {version = "0.4", optional = true}
+aes-gcm = {version = "0.6", optional = true}
 rand = {version = "0.7.3", optional = true}
