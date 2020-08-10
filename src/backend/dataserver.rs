@@ -42,7 +42,7 @@ impl Line {
         LittleEndian::write_u64(&mut line[2..10], self.key);
 
         for (field, value) in self.fields.iter().zip(&mut self.values) {
-            field.encode::<f32>(value.unwrap(), &mut line);
+            field.encode::<f32>(value.unwrap(), &mut line[10..]);
             *value = None;
         }
         line
@@ -74,7 +74,7 @@ impl Dataserver {
         }
 
         #[cfg(feature = "local")] { //add the local sensors manually
-            let line_idx = lines.len()-1;
+            let line_idx = lines.len();
             lines.push(Line::new(local::SET_ID, key, local::FIELDS));
             to_line.insert(Sensor::Temperature, (line_idx,0));
             to_line.insert(Sensor::Humidity, (line_idx,1));
