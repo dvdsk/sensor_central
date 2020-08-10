@@ -2,7 +2,6 @@
 
 use crossbeam_channel::bounded;
 use serde::{Deserialize, Serialize};
-use simplelog::{Config, LevelFilter, SimpleLogger};
 use structopt::StructOpt;
 
 mod backend;
@@ -19,8 +18,6 @@ struct Opt {
     /// full domain including any possible www prefix
     #[structopt(short = "d", long = "domain")]
     domain: String,
-    #[structopt(short = "i", long = "node-id", default_value = "3")]
-    node_id: u16,
     #[structopt(short = "k", long = "dataserver-key")]
     dataserver_key: u64,
     /// home automation key
@@ -40,12 +37,13 @@ struct Opt {
     ble_key: sensors::ble::Key,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash)]
 pub enum Sensor {
     Temperature,
     Humidity,
     Pressure,
-    Test,
+    TestSine,
+    TestTriangle,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -58,12 +56,12 @@ pub enum SensorValue {
 #[tokio::main]
 async fn main() {
     let opt = Opt::from_args();
-    let _ = SimpleLogger::init(LevelFilter::Info, Config::default());
-    let dataserver_url = format!("https://{}:{}/post_data", opt.domain, opt.port);
-    let ha_url = format!("https://{}:{}/{}", 
-        opt.ha_domain, opt.ha_port, opt.ha_key);
+    let _ = setup_logger().unwrap();
 
-    let mut dataserver = backend::Dataserver::new(opt.node_id, opt.dataserver_key, dataserver_url);
+    let dataserver_url = format!("https://{}:{}/post_data", opt.domain, opt.port);
+    let ha_url = format!("https://{}:{}/{}", opt.ha_domain, opt.ha_port, opt.ha_key);
+
+    let mut dataserver = backend::Dataserver::new(opt.dataserver_key, dataserver_url);
     let home_automation = backend::HomeAutomation::new(ha_url);
     let (s, r) = bounded(10);
 
@@ -84,4 +82,23 @@ async fn main() {
         backend::Dataserver::log_any_error(res1);
         backend::HomeAutomation::log_any_error(res2);
     }
+}
+
+fn setup_logger() -> Result<(), fern::InitError> {
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{}[{}][{}] {}",
+                chrono::Local::now().format("[%H:%M:%S]"),
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .level_for("hyper", log::LevelFilter::Info)
+        .level_for("reqwest", log::LevelFilter::Warn)
+        .chain(std::io::stdout())
+        .apply()?;
+    Ok(())
 }

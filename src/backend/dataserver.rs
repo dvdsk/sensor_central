@@ -1,8 +1,15 @@
-use crate::{SensorValue, Sensor};
+use std::collections::HashMap;
+
+use crate::{Sensor, SensorValue};
+use bitspec::Field;
 use byteorder::{ByteOrder, LittleEndian};
 use log::error;
 use reqwest::{self, Client};
-use bitspec::Field;
+
+#[cfg(feature = "ble")]
+use crate::sensors::ble;
+#[cfg(feature = "local")]
+use crate::sensors::local;
 
 #[derive(Default)]
 struct Line {
@@ -13,7 +20,8 @@ struct Line {
 }
 
 impl Line {
-    fn new(id: u16, key: u64, fields: Vec<Field<f32>>) -> Line {
+    fn new(id: u16, key: u64, fields: impl Into<Vec<Field<f32>>>) -> Line {
+        let fields = fields.into();
         Line {
             id,
             key,
@@ -23,14 +31,12 @@ impl Line {
     }
 
     fn is_complete(&self) -> bool {
-        self.values
-            .iter()
-            .fold(true, |acc, x| acc && x.is_some())
+        self.values.iter().fold(true, |acc, x| acc && x.is_some())
     }
-    
+
     fn encode(&mut self) -> Vec<u8> {
         let len: usize = self.fields.iter().map(|x| x.length as usize).sum::<usize>();
-        let mut line = vec![0u8; 10+(len + 8 - 1) / 8];
+        let mut line = vec![0u8; 10 + (len + 8 - 1) / 8];
 
         LittleEndian::write_u16(&mut line[0..2], self.id);
         LittleEndian::write_u64(&mut line[2..10], self.key);
@@ -43,33 +49,56 @@ impl Line {
     }
 }
 
+type LineIdx = usize;
+type FieldIdx = usize;
 pub struct Dataserver {
     client: Client,
-    connected: Line,
     url: String,
-    //remote; LIne
+    lines: Vec<Line>,
+    to_line: HashMap<Sensor, (LineIdx, FieldIdx)>,
 }
 
 impl Dataserver {
-    pub fn new(id: u16, key: u64, url: String) -> Dataserver {
-        Dataserver {
+    pub fn new(key: u64, url: String) -> Dataserver {
+        let mut lines = Vec::new();
+        let mut to_line = HashMap::new();
+
+        #[cfg(feature = "ble")]
+        for info in ble::SENSORS.iter().map(|s| s.values.iter()).flatten() {
+            let line = Line::new(info.set_id, key, info.fields);
+            lines.push(line);
+            let line_idx = lines.len() - 1;
+            for (i, value) in info.ha_values.iter().enumerate() {
+                to_line.insert(*value, (line_idx,i));
+            }
+        }
+
+        #[cfg(feature = "local")] { //add the local sensors manually
+            let line_idx = lines.len()-1;
+            lines.push(Line::new(local::SET_ID, key, local::FIELDS));
+            to_line.insert(Sensor::Temperature, (line_idx,0));
+            to_line.insert(Sensor::Humidity, (line_idx,1));
+            to_line.insert(Sensor::Pressure, (line_idx,2));
+        }
+
+        Self {
             client: Client::new(),
-            connected: Line::new(id, key, vec![TEMPERATURE, HUMIDITY, PRESSURE]),
             url,
+            lines,
+            to_line,
         }
     }
 
     pub async fn handle(&mut self, data: &SensorValue) -> Result<(), reqwest::Error> {
-        match data {
-            SensorValue::Float(Sensor::Temperature ,v) => self.connected.values[0] = Some(*v),
-            SensorValue::Float(Sensor::Humidity, v) => self.connected.values[1] = Some(*v),
-            SensorValue::Float(Sensor::Pressure, v) => self.connected.values[2] = Some(*v),
-            _ => return Ok(()),
-        }
+        if let SensorValue::Float(sensor, value) = data {
+            let (line_idx, field_idx) = self.to_line.get_mut(sensor).unwrap();
+            let line = self.lines.get_mut(*line_idx as usize).unwrap();
+            line.values[*field_idx as usize] = Some(*value);
 
-        if self.connected.is_complete() {
-            let line = self.connected.encode();
-            self.client.post(&self.url).body(line).send().await?; //check this
+            if line.is_complete() {
+                let encoded = line.encode();
+                self.client.post(&self.url).body(encoded).send().await?;
+            }
         }
 
         Ok(())
@@ -81,26 +110,3 @@ impl Dataserver {
         }
     }
 }
-
-////////// List of fields //////////////
-pub const TEMPERATURE: Field<f32> = Field {
-    offset: 80, //bits
-    length: 13, //bits (max 32 bit variables)
-
-    decode_scale: 0.009999999776482582,
-    decode_add: -20.0f32,
-};
-pub const HUMIDITY: Field<f32> = Field {
-    offset: 80 + TEMPERATURE.length,
-    length: 14,
-
-    decode_scale: 0.00800000037997961,
-    decode_add: 0.0,
-};
-pub const PRESSURE: Field<f32> = Field {
-    offset: 80 + TEMPERATURE.length + HUMIDITY.length,
-    length: 19,
-
-    decode_scale: 0.18000000715255738,
-    decode_add: 30000.0,
-};

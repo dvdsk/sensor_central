@@ -1,0 +1,14 @@
+---
+name: Ble reliability testing dataset
+description: "A sine wave with amplitude 5_000, and a triangle wave"
+fields:
+  - Resolution:
+      name: Sine
+      min_value: -5000.
+      max_value: 5000.
+      resolution: 1
+  - Resolution:
+      name: Triangle
+      min_value: -10.
+      max_value: 20.
+      resolution: 0.05

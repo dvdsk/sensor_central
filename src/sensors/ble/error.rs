@@ -21,13 +21,10 @@ impl From<bluebus::Error> for ConnectionError {
             AuthenticationFailed(_)
             | UuidNotFound
             | CharacteristicNotFound(_)
-            | NoFdReturned 
-            | InvalidLength(_)
-            => ConnectionError::Unrecoverable(err),
-            
-            CouldNotConnectToBus(_) 
-            | CouldNotConnectToDevice
-             => ConnectionError::Recoverable(err),
+            | NoFdReturned
+            | InvalidLength(_) => ConnectionError::Unrecoverable(err),
+
+            CouldNotConnectToBus(_) | CouldNotConnectToDevice => ConnectionError::Recoverable(err),
 
             _ => panic!("{:?}, should not occur during connection", err),
         }

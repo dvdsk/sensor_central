@@ -1,2 +1,2 @@
-pub mod local;
 pub mod ble;
+pub mod local;
