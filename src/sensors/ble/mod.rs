@@ -6,6 +6,7 @@ use std::io::Read;
 use std::os::unix::io::{FromRawFd, RawFd};
 use std::thread;
 use std::time::{Duration, Instant};
+use log;
 
 use bluebus::{Ble, BleBuilder};
 use nix::poll::{poll, PollFd, PollFlags};
@@ -98,9 +99,16 @@ impl NotifyStreams {
         }
     }
 
+    //wait up to 100ms for an io event to happen then handle it
     pub fn handle(&mut self, buffer: &mut [u8], s: &mut Sender<SensorValue>) {
-        if poll(&mut self.pollables, -1).unwrap() < 1 {
-            dbg!("poll() failed"); //TODO improve on this
+        
+        match poll(&mut self.pollables, 100).unwrap() {
+            0 => return, //timeout
+            -1 => {
+                let errno = nix::errno::Errno::last();
+                log::error!("poll() failed: {}", errno.desc());
+            }
+            _ => (),
         }
 
         for (i, pollable) in self.pollables.iter().enumerate() {
@@ -233,10 +241,11 @@ impl BleSensors {
     pub fn handle(&mut self, mut s: Sender<SensorValue>) {
         const TIMEOUT: Duration = Duration::from_secs(5);
         let mut buffer = [0u8; 100];
-        let now = Instant::now();
+        let mut now = Instant::now();
 
         loop {
             if now.elapsed() > TIMEOUT {
+                now = Instant::now();
                 self.check_for_disconnects();
             }
 

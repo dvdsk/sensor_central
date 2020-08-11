@@ -2,13 +2,13 @@ use crate::{Sensor, SensorValue};
 use bitspec::Field;
 use crossbeam_channel::Sender;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DeviceInfo {
     pub adress: &'static str,
     pub values: &'static [UuidInfo],
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct UuidInfo {
     pub uuid: &'static str,
     pub set_id: u16,
