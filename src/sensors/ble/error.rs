@@ -24,7 +24,9 @@ impl From<bluebus::Error> for ConnectionError {
             | NoFdReturned
             | InvalidLength(_) => ConnectionError::Unrecoverable(err),
 
-            CouldNotConnectToBus(_) | CouldNotConnectToDevice => ConnectionError::Recoverable(err),
+            CouldNotConnectToBus(_) | BluezFailed(_) | CouldNotConnectToDevice => {
+                ConnectionError::Recoverable(err)
+            }
 
             _ => panic!("{:?}, should not occur during connection", err),
         }

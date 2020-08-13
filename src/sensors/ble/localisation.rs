@@ -27,6 +27,7 @@ impl UuidInfo {
         for (field, sensor) in self.fields.iter().zip(self.ha_values) {
             let value = field.decode::<f32>(buffer);
             let value = SensorValue::Float(*sensor, value);
+            dbg!(&value);
             s.send(value).unwrap();
         }
     }
@@ -42,7 +43,7 @@ pub const SENSORS: &'static [DeviceInfo] = &[
     DeviceInfo {
         adress: "0A:0A:0A:0A:0A:0A",
         values: &[UuidInfo {
-            set_id: 1,
+            set_id: 4,
             uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
             fields: &[
                 // Ble_reliability_testing_dataset

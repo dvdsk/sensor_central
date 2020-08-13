@@ -5,7 +5,6 @@ use rand::Rng;
 fn main() {
     let key = [0u8; 16];
     const NONCE_SIZE: usize = 12;
-    const MAC_SIZE: usize = 6;
 
     let mut rng = rand::thread_rng();
 

@@ -69,16 +69,18 @@ impl Dataserver {
             lines.push(line);
             let line_idx = lines.len() - 1;
             for (i, value) in info.ha_values.iter().enumerate() {
-                to_line.insert(*value, (line_idx,i));
+                to_line.insert(*value, (line_idx, i));
             }
         }
 
-        #[cfg(feature = "local")] { //add the local sensors manually
+        #[cfg(feature = "local")]
+        {
+            //add the local sensors manually
             let line_idx = lines.len();
             lines.push(Line::new(local::SET_ID, key, local::FIELDS));
-            to_line.insert(Sensor::Temperature, (line_idx,0));
-            to_line.insert(Sensor::Humidity, (line_idx,1));
-            to_line.insert(Sensor::Pressure, (line_idx,2));
+            to_line.insert(Sensor::Temperature, (line_idx, 0));
+            to_line.insert(Sensor::Humidity, (line_idx, 1));
+            to_line.insert(Sensor::Pressure, (line_idx, 2));
         }
 
         Self {

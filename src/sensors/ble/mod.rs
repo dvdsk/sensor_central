@@ -1,12 +1,12 @@
 #![cfg(feature = "ble")]
 
 use crossbeam_channel::Sender;
+use log;
 use std::fs::File;
 use std::io::Read;
 use std::os::unix::io::{FromRawFd, RawFd};
 use std::thread;
 use std::time::{Duration, Instant};
-use log;
 
 use bluebus::{Ble, BleBuilder};
 use nix::poll::{poll, PollFd, PollFlags};
@@ -47,8 +47,51 @@ impl std::str::FromStr for Key {
     }
 }
 
+struct DisconnectedDevice {
+    device: DeviceInfo,
+    recoverable: bool,
+    last_try: Instant,
+    next_try: Duration,
+    number_retries: usize,
+}
+
+impl DisconnectedDevice {
+    pub fn schedule_retry(&mut self) {
+        const MAX_RETRY_DELAY: usize = 60 * 30;
+        const RETRY_DELAY_INC: usize = 30;
+
+        self.number_retries += 1;
+        let delay = self.number_retries * RETRY_DELAY_INC;
+        let delay = usize::min(MAX_RETRY_DELAY, delay);
+
+        log::debug!("retrying connection in {} seconds", delay);
+        self.next_try = Duration::from_secs(delay as u64);
+    }
+    pub fn should_retry(&self) -> bool {
+        self.last_try.elapsed() > self.next_try
+    }
+}
+
+impl From<DisconnectedDevice> for DeviceInfo {
+    fn from(disconnected: DisconnectedDevice) -> Self {
+        return disconnected.device;
+    }
+}
+
+impl From<DeviceInfo> for DisconnectedDevice {
+    fn from(device: DeviceInfo) -> Self {
+        DisconnectedDevice {
+            device,
+            recoverable: true,
+            last_try: Instant::now(),
+            next_try: Duration::from_secs(0),
+            number_retries: 0,
+        }
+    }
+}
+
 pub struct BleSensors {
-    disconnected: Vec<DeviceInfo>,
+    disconnected: Vec<DisconnectedDevice>,
     connected: Vec<DeviceInfo>,
     notify_streams: NotifyStreams,
 
@@ -101,7 +144,6 @@ impl NotifyStreams {
 
     //wait up to 100ms for an io event to happen then handle it
     pub fn handle(&mut self, buffer: &mut [u8], s: &mut Sender<SensorValue>) {
-        
         match poll(&mut self.pollables, 100).unwrap() {
             0 => return, //timeout
             -1 => {
@@ -132,7 +174,7 @@ impl BleSensors {
         ble.stop_discovery()?;
 
         Ok(BleSensors {
-            disconnected: SENSORS.to_vec(),
+            disconnected: SENSORS.iter().cloned().map(|s| s.into()).collect(),
             connected: Vec::new(),
 
             notify_streams: NotifyStreams::default(),
@@ -142,6 +184,7 @@ impl BleSensors {
         })
     }
 
+    //TODO refactor, nesting way too deep
     pub fn reconnect_disconnected(&mut self) -> Result<(), ConnectionError> {
         let connected = &mut self.connected;
         let disconnected = &mut self.disconnected;
@@ -149,23 +192,37 @@ impl BleSensors {
         let ble = &mut self.ble;
         let key = &self.key;
 
-        disconnected.drain_filter(|device| {
-            let res = Self::connect_device(ble, device, key);
-            match res {
-                Ok(fds) => {
-                    notify_streams.add(fds, device);
-                    log::info!("(re)connected to {}", device.adress);
-                    true //remove device from disconnected
-                }
-                Err(e) => {
-                    if !e.is_recoverable() {
-                        panic!("ran into unrecoverable error during connection of device: {}, error was: {:?}", device.adress, e);
+        disconnected
+            .drain_filter(|d| {
+                if d.should_retry() {
+                    match Self::connect_device(ble, &d.device, key) {
+                        Ok(fds) => {
+                            notify_streams.add(fds, &d.device);
+                            log::info!("(re)connected to {}", &d.device.adress);
+                            true //remove device from disconnected
+                        }
+                        Err(e) => {
+                            if !e.is_recoverable() {
+                                d.recoverable = false;
+                                log::error!(
+                                    "unrecoverable error connecting: {}, error: {:?}",
+                                    &d.device.adress,
+                                    e
+                                );
+                                true //remove device from disconnected
+                            } else {
+                                d.schedule_retry();
+                                log::debug!("failed to (re)connect to {}", &d.device.adress);
+                                false //keep device in disconnected
+                            }
+                        }
                     }
-                    log::debug!("failed to (re)connect to {}", device.adress);
+                } else {
                     false //keep device in disconnected
                 }
-            }
-        }).for_each(|device| connected.push(device));
+            })
+            .filter(|d| d.recoverable)
+            .for_each(|d| connected.push(d.into()));
         Ok(())
     }
 
@@ -231,11 +288,13 @@ impl BleSensors {
                 if ble.is_connected(device.adress).unwrap() {
                     false
                 } else {
+                    log::warn!("{} unexpectedly disconnected", device.adress);
                     notify_streams.remove(device);
                     true
                 }
             })
-            .for_each(|device| disconnected.push(device));
+            .map(|device| DisconnectedDevice::from(device))
+            .for_each(|mut d| {d.schedule_retry(); disconnected.push(d)});
     }
 
     pub fn handle(&mut self, mut s: Sender<SensorValue>) {
@@ -247,9 +306,9 @@ impl BleSensors {
             if now.elapsed() > TIMEOUT {
                 now = Instant::now();
                 self.check_for_disconnects();
+                self.reconnect_disconnected().unwrap();
             }
 
-            self.reconnect_disconnected().unwrap();
             self.notify_streams.handle(&mut buffer, &mut s);
         }
     }
