@@ -11,12 +11,12 @@ ble = ["bluebus", "aes-gcm", "rand"]
 
 [dependencies]
 tokio = { version = "0.2", features = ["full"] }
-reqwest = {version = "0.10"}
+reqwest = {version = "0.10", default-features = false, features = ["rustls-tls"]}
 
 linux-embedded-hal = "0.2"
 bme280 = "0.1"
 
-gpio-cdev = { git = "https://github.com/rust-embedded/gpio-cdev", branch = "master", optional = true}
+gpio-cdev = { version = "0.4", optional = true}
 nix = "0.17"
 
 byteorder = "1.3"

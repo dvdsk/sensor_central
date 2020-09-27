@@ -1,4 +1,6 @@
 use bluebus::Error::*;
+use bluebus::rustbus::client_conn::Error as RustbusError;
+use std::mem::discriminant;
 
 #[derive(Debug)]
 pub enum ConnectionError {
@@ -24,7 +26,14 @@ impl From<bluebus::Error> for ConnectionError {
             | NoFdReturned
             | InvalidLength(_) => ConnectionError::Unrecoverable(err),
 
-            CouldNotConnectToBus(_) | BluezFailed(_) | CouldNotConnectToDevice => {
+            DbusConnectionError(ref e) if discriminant(e) == discriminant(&RustbusError::TimedOut) => {
+                ConnectionError::Recoverable(err)
+            }
+            
+            CouldNotConnectToBus(_)
+            | BluezFailed(_) 
+            | CouldNotConnectToDevice 
+            | PairingTimeOut => {
                 ConnectionError::Recoverable(err)
             }
 

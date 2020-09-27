@@ -42,7 +42,7 @@ impl Line {
         LittleEndian::write_u64(&mut line[2..10], self.key);
 
         for (field, value) in self.fields.iter().zip(&mut self.values) {
-            field.encode::<f32>(value.unwrap(), &mut line[10..]);
+            field.encode(value.unwrap(), &mut line[10..]);
             *value = None;
         }
         line

@@ -294,7 +294,10 @@ impl BleSensors {
                 }
             })
             .map(|device| DisconnectedDevice::from(device))
-            .for_each(|mut d| {d.schedule_retry(); disconnected.push(d)});
+            .for_each(|mut d| {
+                d.schedule_retry();
+                disconnected.push(d)
+            });
     }
 
     pub fn handle(&mut self, mut s: Sender<SensorValue>) {

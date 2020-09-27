@@ -98,6 +98,8 @@ fn setup_logger() -> Result<(), fern::InitError> {
         .level(log::LevelFilter::Debug)
         .level_for("hyper", log::LevelFilter::Info)
         .level_for("reqwest", log::LevelFilter::Warn)
+        .level_for("rustls", log::LevelFilter::Warn)
+        .level_for("h2", log::LevelFilter::Warn)
         .chain(std::io::stdout())
         .apply()?;
     Ok(())
