@@ -27,7 +27,6 @@ impl UuidInfo {
         for (field, sensor) in self.fields.iter().zip(self.ha_values) {
             let value = field.decode::<f32>(buffer);
             let value = SensorValue::Float(*sensor, value);
-            dbg!(&value);
             s.send(value).unwrap();
         }
     }
@@ -65,19 +64,4 @@ pub const SENSORS: &'static [DeviceInfo] = &[
             ha_values: &[Sensor::TestSine, Sensor::TestTriangle],
         }],
     },
-    /*DeviceInfo {
-        adress: "0A:0A:0A:0A:0A:0A",
-        values: &[
-            UuidInfo {
-                uuid: "93700002-1bb7-1599-985b-f5e7dc991483",
-                fields: &[Field::<f32> {
-                    decode_add: 1.,
-                    decode_scale: 1.,
-                    length: 1,
-                    offset: 1,
-                }],
-                ha_values: &[Sensor::Humidity],
-            }
-        ]
-    },*/
 ];
