@@ -37,20 +37,15 @@ struct Opt {
     ble_key: sensors::ble::Key,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Eq, PartialEq, Hash)]
-pub enum Sensor {
-    Temperature,
-    Humidity,
-    Pressure,
-    TestSine,
-    TestTriangle,
-}
-
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum SensorValue {
     #[cfg(feature = "local")]
     ButtonPress(buttons::Press),
-    Float(Sensor, f32),
+    Temperature(f32),
+    Humidity(f32),
+    Pressure(f32),
+    TestSine(f32),
+    TestTriangle(f32),
 }
 
 #[tokio::main]

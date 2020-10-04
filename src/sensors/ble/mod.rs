@@ -18,9 +18,9 @@ use rand::Rng;
 use crate::error::Error;
 use crate::SensorValue;
 
-mod localisation;
-pub use localisation::SENSORS;
-use localisation::{DeviceInfo, UuidInfo};
+mod localization;
+pub use localization::SENSORS;
+use localization::{DeviceInfo, UuidInfo};
 mod error;
 use error::ConnectionError;
 
@@ -243,7 +243,7 @@ impl BleSensors {
         let test: Result<Vec<RawFd>, bluebus::Error> = device
             .values
             .iter()
-            .map(|u| ble.notify(device.adress, u.uuid))
+            .map(|u| ble.notify(device.adress, u.uuid()))
             .collect();
         let test = test?; //TODO cleanup
         Ok(test)

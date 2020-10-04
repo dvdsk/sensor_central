@@ -21,6 +21,7 @@ impl From<bluebus::Error> for ConnectionError {
     fn from(err: bluebus::Error) -> Self {
         match err {
             AuthenticationFailed(_)
+            | AuthenticationCanceled(_)
             | UuidNotFound
             | CharacteristicNotFound(_)
             | NoFdReturned
