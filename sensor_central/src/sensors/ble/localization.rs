@@ -55,7 +55,7 @@ impl UuidInfo {
 pub fn process_static(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
     for (field, sensor) in info.fields.iter().zip(info.sensorval) {
         let value = field.decode(buffer);
-        let value = SensorValue::from((value,*sensor));
+        let value = to_sensorval((value,*sensor));
         s.send(value).unwrap();
     }
 }
@@ -64,19 +64,17 @@ pub fn process_dynamic(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
     todo!()
 }
 
-impl From<(FieldValue, SensorValue)> for SensorValue {
-    fn from(t: (FieldValue, SensorValue)) -> Self {
-        use FieldValue::*;
-        use SensorValue::*;
+fn to_sensorval(t: (FieldValue, SensorValue)) -> SensorValue {
+    use FieldValue::*;
+    use SensorValue::*;
 
-        match t {
-            (F32(v), Temperature(_)) => Temperature(v),
-            (F32(v), Humidity(_)) => Humidity(v),
-            (F32(v), Pressure(_)) => Pressure(v),
-            (F32(v), TestSine(_)) => TestSine(v),
-            (F32(v), TestTriangle(_)) => TestTriangle(v),
-            _ => panic!("unhandled"),
-        }
+    match t {
+        (F32(v), Temperature(_)) => Temperature(v),
+        (F32(v), Humidity(_)) => Humidity(v),
+        (F32(v), Pressure(_)) => Pressure(v),
+        (F32(v), TestSine(_)) => TestSine(v),
+        (F32(v), TestTriangle(_)) => TestTriangle(v),
+        _ => panic!("unhandled"),
     }
 }
 

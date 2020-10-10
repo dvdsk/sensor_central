@@ -17,3 +17,5 @@ fields:
       length: 10
       decode_scale: 0.10000000149011612
       decode_add: -40.0
+  - Bool:
+      name: template field name4

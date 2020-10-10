@@ -1,8 +1,8 @@
 #![feature(drain_filter)]
 
 use crossbeam_channel::bounded;
-use serde::{Deserialize, Serialize};
 use structopt::StructOpt;
+use sensor_value::SensorValue;
 
 mod backend;
 mod buttons;
@@ -32,21 +32,10 @@ struct Opt {
     /// ble authentication key
     /// for example "[1,2,3,4]". If the key is shorter then 16 bytes it is
     /// padded with zeros
-    #[cfg(feature = "ble")]
     #[structopt(long = "ble-key")]
     ble_key: sensors::ble::Key,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum SensorValue {
-    #[cfg(feature = "local")]
-    ButtonPress(buttons::Press),
-    Temperature(f32),
-    Humidity(f32),
-    Pressure(f32),
-    TestSine(f32),
-    TestTriangle(f32),
-}
 
 #[tokio::main]
 async fn main() {
@@ -60,11 +49,8 @@ async fn main() {
     let home_automation = backend::HomeAutomation::new(ha_url);
     let (s, r) = bounded(10);
 
-    #[cfg(feature = "local")]
     buttons::start_monitoring(s.clone()).unwrap();
-    #[cfg(feature = "local")]
     sensors::local::start_monitoring(s.clone());
-    #[cfg(feature = "ble")]
     sensors::ble::start_monitoring(s, opt.ble_key);
 
     loop {

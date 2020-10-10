@@ -1,6 +1,3 @@
-#![cfg(feature = "local")]
-
-use bitspec::{Field, FloatField};
 use bme280::{self, BME280};
 use hal::{Delay, I2cdev};
 use linux_embedded_hal as hal;
@@ -45,29 +42,3 @@ pub fn start_monitoring(s: Sender<SensorValue>) {
         }
     });
 }
-
-pub const SET_ID: u16 = 3;
-pub const FIELDS: &'static [Field] = &[
-    // Desk_Sensors
-    Field::F32(FloatField {
-        // temperature
-        decode_add: -20.0,
-        decode_scale: 0.01,
-        length: 13,
-        offset: 0,
-    }),
-    Field::F32(FloatField {
-        // humidity
-        decode_add: 0.0,
-        decode_scale: 0.008,
-        length: 14,
-        offset: 13,
-    }),
-    Field::F32(FloatField {
-        // pressure
-        decode_add: 30000.0,
-        decode_scale: 0.18,
-        length: 19,
-        offset: 27,
-    }),
-];

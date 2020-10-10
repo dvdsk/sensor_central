@@ -1,5 +1,3 @@
-#![cfg(feature = "ble")]
-
 use crossbeam_channel::Sender;
 use log;
 use std::fs::File;
