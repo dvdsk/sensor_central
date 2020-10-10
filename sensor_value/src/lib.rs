@@ -1,5 +1,3 @@
-#![feature(drain_filter)]
-
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
 use serde::{Deserialize, Serialize};

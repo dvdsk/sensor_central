@@ -1312,27 +1312,7 @@ dependencies = [
 name = "sensor_value"
 version = "0.1.0"
 dependencies = [
- "aes-gcm",
- "bincode",
- "bitspec",
- "bluebus",
- "bme280",
- "byteorder",
- "chrono",
- "crossbeam-channel",
- "fern",
- "gpio-cdev",
- "linux-embedded-hal",
- "log",
- "nix 0.17.0",
- "num 0.2.1",
- "num-traits",
- "rand 0.7.3",
- "reqwest",
  "serde",
- "smallvec",
- "structopt",
- "tokio",
 ]
 
 [[package]]
