@@ -32,7 +32,7 @@ impl Line {
     }
 
     fn encode(&mut self) -> Vec<u8> {
-        let len: usize = self.fields.iter().map(|x| x.len() as usize).sum::<usize>();
+        let len: usize = self.fields.iter().map(|x| x.length() as usize).sum::<usize>();
         let mut line = vec![0u8; 10 + (len + 8 - 1) / 8];
 
         LittleEndian::write_u16(&mut line[0..2], self.id);
@@ -64,8 +64,6 @@ impl Dataserver {
             lines.push(line);
             let line_idx = lines.len() - 1;
             for (i, value) in set.from.iter().enumerate() {
-                dbg!(&value);
-                dbg!(&value.to_key());
                 to_line.insert(value.to_key(), (line_idx, i));
             }
         }
@@ -114,5 +112,9 @@ fn to_fieldval(v: SensorValue) -> FieldValue {
         Pressure(v) => F32(v),
         TestSine(v) => F32(v),
         TestTriangle(v) => F32(v),
+        TestSine2(v) => F32(v),
+        TestTriangle2(v) => F32(v),
+        TestButtonOne(v) => F32(v),
+        MovementSensor(b) => Bool(b),
     }
 }

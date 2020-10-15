@@ -119,7 +119,6 @@ impl NotifyStreams {
             .extend(fds.iter().map(|fd| PollFd::new(*fd, PollFlags::POLLIN)));
         self.files
             .extend(fds.iter().map(|fd| unsafe { File::from_raw_fd(*fd) }));
-        //self.fds.append(fds);es;
 
         self.infos.extend(device.values.iter().cloned());
     }
