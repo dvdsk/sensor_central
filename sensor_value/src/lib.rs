@@ -1,6 +1,7 @@
 use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
 use serde::{Deserialize, Serialize};
+use bitspec::FieldValue;
 
 #[derive(Clone, Copy, Debug, Hash, Serialize, Deserialize)]
 pub enum Button {
@@ -49,5 +50,23 @@ impl SensorValue {
             _ => (),
         }
         hasher.finish()
+    }
+}
+
+impl From<(FieldValue, SensorValue)> for SensorValue {
+    fn from(t: (FieldValue, SensorValue)) -> Self {
+        use FieldValue::*;
+        use SensorValue::*;
+
+        match t {
+            (F32(v), Temperature(_)) => Temperature(v),
+            (F32(v), Humidity(_)) => Humidity(v),
+            (F32(v), Pressure(_)) => Pressure(v),
+            (F32(v), TestSine(_)) => TestSine(v),
+            (F32(v), TestTriangle(_)) => TestTriangle(v),
+            (F32(v), TestSine2(_)) => TestSine2(v),
+            (F32(v), TestTriangle2(_)) => TestTriangle2(v),
+            _ => panic!("unhandled"),
+        }
     }
 }

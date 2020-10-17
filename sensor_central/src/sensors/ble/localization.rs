@@ -1,5 +1,5 @@
 use crate::SensorValue;
-use bitspec::{Field, FieldValue, FloatField, BoolField};
+use bitspec::{Field, FloatField};
 use crossbeam_channel::Sender;
 
 #[derive(Clone, Debug)]
@@ -55,7 +55,7 @@ impl UuidInfo {
 pub fn process_static(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
     for (field, sensor) in info.fields.iter().zip(info.sensorval) {
         let value = field.decode(buffer);
-        let value = to_sensorval((value,*sensor));
+        let value = SensorValue::from((value,*sensor));
         s.send(value).unwrap();
     }
 }
@@ -79,24 +79,11 @@ pub fn process_dynamic(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
         field.set_offset(bit_offset);
         bit_offset += field.length();
         let value = field.decode(buffer);
-        let value = to_sensorval((value, sensor));
+        let value = SensorValue::from((value,sensor));
         s.send(value).unwrap();
     }
 }
 
-fn to_sensorval(t: (FieldValue, SensorValue)) -> SensorValue {
-    use FieldValue::*;
-    use SensorValue::*;
-
-    match t {
-        (F32(v), Temperature(_)) => Temperature(v),
-        (F32(v), Humidity(_)) => Humidity(v),
-        (F32(v), Pressure(_)) => Pressure(v),
-        (F32(v), TestSine(_)) => TestSine(v),
-        (F32(v), TestTriangle(_)) => TestTriangle(v),
-        _ => panic!("unhandled"),
-    }
-}
 
 pub const SENSORS: &'static [DeviceInfo] = &[
     DeviceInfo {
