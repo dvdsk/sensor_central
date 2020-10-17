@@ -30,7 +30,8 @@ crossbeam-channel = "0.4"
 
 bitspec = { git = "https://github.com/dskleingeld/bitspec", branch = "bool-fields" }
 bluebus = { git = "https://github.com/dskleingeld/bluebus"}
-sensor_value = { git = "https://github.com/dskleingeld/sensor_central", branch = "boolean-fields" }
+# sensor_value = { git = "https://github.com/dskleingeld/sensor_central/sensor_value", branch = "boolean-fields" }
+sensor_value = { path = "../sensor_value" }
 
 aes-gcm = {version = "0.6"}
 rand = {version = "0.7.3"}

@@ -162,7 +162,7 @@ pub const SENSORS: &'static [DeviceInfo] = &[
                         offset: 14,
                     }),
                 ],
-                sensorval: &[SensorValue::TestSine(0.), SensorValue::TestTriangle(0.)],
+                sensorval: &[SensorValue::TestSine2(0.), SensorValue::TestTriangle2(0.)],
             }),
         ],
     },
