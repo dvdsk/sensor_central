@@ -123,21 +123,21 @@ pub const SENSORS: &'static [DeviceInfo] = &[
                 ],
                 sensorval: &[SensorValue::TestSine(0.), SensorValue::TestTriangle(0.)],
             }),
-            UuidInfo::Dynamic(Info { //Still needs to be implemented
-                uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
-                fields: &[ // test_remote_buttons
-                    Field::F32(FloatField { // test button one
-                        decode_add: 0.0000000000,
-                        decode_scale: 10.0000000000,
-                        length: 10,
-                        offset: 0
-                    }),
-                    Field::Bool(BoolField { // test movement sensor
-                        offset: 10
-                    }),
-                ],
-                sensorval: &[SensorValue::TestButtonOne(0.), SensorValue::MovementSensor(false)],
-            }),
+            // UuidInfo::Dynamic(Info { //Still needs to be implemented
+                // uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
+                // fields: &[ // test_remote_buttons
+                //     Field::F32(FloatField { // test button one
+                //         decode_add: 0.0000000000,
+                //         decode_scale: 10.0000000000,
+                //         length: 10,
+                //         offset: 0
+                //     }),
+                //     Field::Bool(BoolField { // test movement sensor
+                //         offset: 10
+                //     }),
+                // ],
+                // sensorval: &[SensorValue::TestButtonOne(0.), SensorValue::MovementSensor(false)],
+            // }),
         ],
     },
     DeviceInfo {

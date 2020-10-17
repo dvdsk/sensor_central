@@ -24,6 +24,7 @@ impl From<bluebus::Error> for ConnectionError {
             | AuthenticationCanceled(_)
             | UuidNotFound
             | NoFdReturned
+            | CharacteristicNotFound(_)
             | InvalidLength(_) => ConnectionError::Unrecoverable(err),
 
             DbusConnectionError(ref e) if discriminant(e) == discriminant(&RustbusError::TimedOut) => {
@@ -32,7 +33,6 @@ impl From<bluebus::Error> for ConnectionError {
             
             CouldNotConnectToBus(_)
             | BluezFailed(_) 
-            | CharacteristicNotFound(_) //TODO FIXME under investigation is this is recoverable
             | CouldNotConnectToDevice 
             | PairingTimeOut => {
                 ConnectionError::Recoverable(err)
