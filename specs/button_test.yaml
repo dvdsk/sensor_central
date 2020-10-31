@@ -1,0 +1,21 @@
+---
+name: Ble button test set 
+description: "A sine wave with amplitude 5_000, and a triangle wave, + a press button and a movement sensor"
+fields:
+  - Resolution:
+      name: Sine
+      min_value: -5000.
+      max_value: 5000.
+      resolution: 1
+  - Resolution:
+      name: Triangle
+      min_value: -10.
+      max_value: 20.
+      resolution: 0.05
+  - Manual:
+      name: test button one
+      length: 10
+      decode_scale: 10
+      decode_add: 0.0
+  - Bool:
+      name: test movement sensor

@@ -21,7 +21,6 @@ impl From<bluebus::Error> for ConnectionError {
     fn from(err: bluebus::Error) -> Self {
         match err {
             AuthenticationFailed(_)
-            | AuthenticationCanceled(_)
             | UuidNotFound
             | NoFdReturned
             | CharacteristicNotFound(_)
@@ -32,6 +31,7 @@ impl From<bluebus::Error> for ConnectionError {
             }
             
             CouldNotConnectToBus(_)
+            | AuthenticationCanceled(_) //FIXME might be recoverable is due to conn. loss
             | BluezFailed(_) 
             | CouldNotConnectToDevice 
             | PairingTimeOut => {

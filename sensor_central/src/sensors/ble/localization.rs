@@ -1,5 +1,5 @@
 use crate::SensorValue;
-use bitspec::{Field, FloatField};
+use bitspec::{Field, FloatField, BoolField};
 use crossbeam_channel::Sender;
 
 #[derive(Clone, Debug)]
@@ -41,7 +41,7 @@ impl UuidInfo {
                 let len = (last.offset() + last.length() + (8 - 1)) / 8;
                 len as usize
             }
-            Self::Dynamic(info) => todo!(),
+            Self::Dynamic(_) => 3, // byte len of dynamic package
         }
     }
     pub fn uuid(&self) -> &str {
@@ -65,9 +65,9 @@ pub fn process_dynamic(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
     let mut bit_offset = 0;
 
     loop {
-        if bit_offset > 20 { break}
+        if bit_offset as usize > buffer.len() { break}
         let field_id = decode(buffer, bit_offset, 8) as usize;
-        if field_id == u8::MAX as usize {break}
+        if field_id == u8::MAX as usize {break} // indicates end of buffer
 
         bit_offset += 8;
         let mut field = info.fields
@@ -110,21 +110,6 @@ pub const SENSORS: &'static [DeviceInfo] = &[
                 ],
                 sensorval: &[SensorValue::TestSine(0.), SensorValue::TestTriangle(0.)],
             }),
-            // UuidInfo::Dynamic(Info { //Still needs to be implemented
-                // uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
-                // fields: &[ // test_remote_buttons
-                //     Field::F32(FloatField { // test button one
-                //         decode_add: 0.0000000000,
-                //         decode_scale: 10.0000000000,
-                //         length: 10,
-                //         offset: 0
-                //     }),
-                //     Field::Bool(BoolField { // test movement sensor
-                //         offset: 10
-                //     }),
-                // ],
-                // sensorval: &[SensorValue::TestButtonOne(0.), SensorValue::MovementSensor(false)],
-            // }),
         ],
     },
     DeviceInfo {
@@ -150,6 +135,38 @@ pub const SENSORS: &'static [DeviceInfo] = &[
                     }),
                 ],
                 sensorval: &[SensorValue::TestSine2(0.), SensorValue::TestTriangle2(0.)],
+            }),
+        ],
+    },
+    DeviceInfo {
+        adress: "0A:0A:0A:0A:0A:32",
+        values: &[
+            UuidInfo::Dynamic(Info {
+                uuid: "93700002-1bb7-1599-985b-f5e7dc991483",
+                fields: &[ // Ble_button_test_set
+                    Field::F32(FloatField { // Sine
+                        decode_add: -5000.0000000000,
+                        decode_scale: 1.0000000000,
+                        length: 14,
+                        offset: 0	}),
+                    Field::F32(FloatField { // Triangle
+                        decode_add: -10.0000000000,
+                        decode_scale: 0.0500000007,
+                        length: 10,
+                        offset: 14	}),
+                    Field::F32(FloatField { // test button one
+                        decode_add: 0.0000000000,
+                        decode_scale: 10.0000000000,
+                        length: 10,
+                        offset: 24	}),
+                    Field::Bool(BoolField { // test movement sensor
+                        offset: 34	}),
+                ],
+                sensorval: &[
+                    SensorValue::TestSine3(0.), 
+                    SensorValue::TestTriangle3(0.), 
+                    SensorValue::TestButtonOne(0.), 
+                    SensorValue::MovementSensor(false)],
             }),
         ],
     },

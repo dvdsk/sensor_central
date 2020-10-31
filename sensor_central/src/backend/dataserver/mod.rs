@@ -102,11 +102,6 @@ fn to_fieldval(v: SensorValue) -> FieldValue {
     use FieldValue::*;
 
     match v {
-        ButtonPress(p) => {
-            // how do we store this a dataset?
-            // need 4 bits...
-            unimplemented!();
-        },
         Temperature(v) => F32(v),
         Humidity(v) => F32(v),
         Pressure(v) => F32(v),
@@ -114,7 +109,6 @@ fn to_fieldval(v: SensorValue) -> FieldValue {
         TestTriangle(v) => F32(v),
         TestSine2(v) => F32(v),
         TestTriangle2(v) => F32(v),
-        TestButtonOne(v) => F32(v),
-        MovementSensor(b) => Bool(b),
+        _ => unimplemented!(),
     }
 }

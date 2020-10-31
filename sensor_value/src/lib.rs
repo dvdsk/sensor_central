@@ -35,6 +35,8 @@ pub enum SensorValue {
     TestTriangle(f32),
     TestSine2(f32),
     TestTriangle2(f32),
+    TestSine3(f32),
+    TestTriangle3(f32),
     TestButtonOne(f32),
     MovementSensor(bool),
 }
