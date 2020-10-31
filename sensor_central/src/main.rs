@@ -54,7 +54,7 @@ async fn main() {
     sensors::ble::start_monitoring(s, opt.ble_key);
 
     loop {
-        let data = r.recv().unwrap();
+        let data: SensorValue = r.recv().unwrap();
 
         let f1 = home_automation.handle(&data);
         let f2 = dataserver.handle(&data);

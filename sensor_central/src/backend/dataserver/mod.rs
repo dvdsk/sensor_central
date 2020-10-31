@@ -76,6 +76,7 @@ impl Dataserver {
         }
     }
 
+    // TODO rework once we start using dynamic fields
     pub async fn handle(&mut self, value: &SensorValue) -> Result<(), reqwest::Error> {
         if let Some((line_idx, field_idx)) = self.to_line.get_mut(&value.to_key()) {
             // dbg!(&value.to_key());
