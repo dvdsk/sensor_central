@@ -166,6 +166,10 @@ const PAIRING_TIMEOUT: Duration = Duration::from_secs(15);
 impl BleSensors {
     pub fn new(ble_key: Key) -> Result<Self, Error> {
         let mut ble = BleBuilder::default().build()?;
+        for sensor in SENSORS { //remove cache for all sensors
+            ble.remove_attribute_cache(sensor.adress).unwrap();
+        }
+
         ble.start_discovery()?;
         thread::sleep(Duration::from_secs(5));
         ble.stop_discovery()?;

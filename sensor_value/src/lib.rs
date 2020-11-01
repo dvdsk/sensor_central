@@ -31,6 +31,12 @@ pub enum SensorValue {
     Temperature(f32),
     Humidity(f32),
     Pressure(f32),
+
+    BathroomTemp(f32),
+    BathroomHum(f32),
+    MovementShower(bool),
+    MovementToilet(bool),
+
     TestSine(f32),
     TestTriangle(f32),
     TestSine2(f32),
@@ -64,6 +70,12 @@ impl From<(FieldValue, SensorValue)> for SensorValue {
             (F32(v), Temperature(_)) => Temperature(v),
             (F32(v), Humidity(_)) => Humidity(v),
             (F32(v), Pressure(_)) => Pressure(v),
+
+            (F32(v), BathroomTemp(_)) => BathroomTemp(v),
+            (F32(v), BathroomHum(_)) => BathroomHum(v),
+            (Bool(b), MovementShower(_)) => MovementShower(b),
+            (Bool(b), MovementToilet(_)) => MovementToilet(b),
+
             (F32(v), TestSine(_)) => TestSine(v),
             (F32(v), TestTriangle(_)) => TestTriangle(v),
             (F32(v), TestSine2(_)) => TestSine2(v),

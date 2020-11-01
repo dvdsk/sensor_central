@@ -62,26 +62,18 @@ pub fn process_static(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
 
 pub fn process_dynamic(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
     use bitspec::compression::decode;
-    let mut bit_offset = 0;
 
-    loop {
-        if bit_offset as usize > buffer.len() { break}
-        let field_id = decode(buffer, bit_offset, 8) as usize;
-        if field_id == u8::MAX as usize {break} // indicates end of buffer
+    let field_id = buffer[0] as usize;
+    let mut field = info.fields
+        .get(field_id)
+        .expect(&format!("field_id {} was encoded wrongly", field_id))
+        .clone();
+    let sensor = info.sensorval[field_id];
 
-        bit_offset += 8;
-        let mut field = info.fields
-            .get(field_id)
-            .expect(&format!("field_id {} was encoded wrongly", field_id))
-            .clone();
-        let sensor = info.sensorval[field_id];
-
-        field.set_offset(bit_offset);
-        bit_offset += field.length();
-        let value = field.decode(buffer);
-        let value = SensorValue::from((value,sensor));
-        s.send(value).unwrap();
-    }
+    field.set_offset(8);
+    let value = field.decode(buffer);
+    let value = SensorValue::from((value,sensor));
+    s.send(value).unwrap();
 }
 
 
@@ -113,7 +105,7 @@ pub const SENSORS: &'static [DeviceInfo] = &[
         ],
     },
     DeviceInfo {
-        adress: "0A:0A:0A:0A:0A:5A",
+        adress: "EC:71:25:75:9F:DD",
         values: &[
             UuidInfo::Static(Info {
                 uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
@@ -139,34 +131,33 @@ pub const SENSORS: &'static [DeviceInfo] = &[
         ],
     },
     DeviceInfo {
-        adress: "0A:0A:0A:0A:0A:32",
+        adress: "E2:62:7F:7C:AD:86", //bathroom
         values: &[
+            UuidInfo::Static(Info {
+                uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
+                fields: &[
+                    Field::F32(FloatField { // Temperature
+                        decode_add: -20.0000000000,
+                        decode_scale: 0.1000000015,
+                        length: 10,
+                        offset: 0	}),
+                    Field::F32(FloatField { // Humidity
+                        decode_add: 0.0000000000,
+                        decode_scale: 0.1000000015,
+                        length: 10,
+                        offset: 10	}),
+                ],
+                sensorval: &[SensorValue::BathroomTemp(0.), SensorValue::BathroomHum(0.)],
+            }),
             UuidInfo::Dynamic(Info {
                 uuid: "93700002-1bb7-1599-985b-f5e7dc991483",
                 fields: &[ // Ble_button_test_set
-                    Field::F32(FloatField { // Sine
-                        decode_add: -5000.0000000000,
-                        decode_scale: 1.0000000000,
-                        length: 14,
-                        offset: 0	}),
-                    Field::F32(FloatField { // Triangle
-                        decode_add: -10.0000000000,
-                        decode_scale: 0.0500000007,
-                        length: 10,
-                        offset: 14	}),
-                    Field::F32(FloatField { // test button one
-                        decode_add: 0.0000000000,
-                        decode_scale: 10.0000000000,
-                        length: 10,
-                        offset: 24	}),
-                    Field::Bool(BoolField { // test movement sensor
-                        offset: 34	}),
+                    Field::Bool(BoolField { // movement sensor shower
+                        offset: 20	}),
+                    Field::Bool(BoolField { // movement sensor toilet
+                        offset: 21	}),
                 ],
-                sensorval: &[
-                    SensorValue::TestSine3(0.), 
-                    SensorValue::TestTriangle3(0.), 
-                    SensorValue::TestButtonOne(0.), 
-                    SensorValue::MovementSensor(false)],
+                sensorval: &[SensorValue::MovementShower(false), SensorValue::MovementToilet(false)],
             }),
         ],
     },
