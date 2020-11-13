@@ -61,8 +61,6 @@ pub fn process_static(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
 }
 
 pub fn process_dynamic(info: &Info, buffer: &[u8], s :&mut Sender<SensorValue>){
-    use bitspec::compression::decode;
-
     let field_id = buffer[0] as usize;
     let mut field = info.fields
         .get(field_id)
@@ -132,6 +130,7 @@ pub const SENSORS: &'static [DeviceInfo] = &[
     },
     DeviceInfo {
         adress: "E2:62:7F:7C:AD:86", //bathroom
+        // adress: "FA:A3:55:3E:E7:7B", //bathroom (debug unit)
         values: &[
             UuidInfo::Static(Info {
                 uuid: "93700001-1bb7-1599-985b-f5e7dc991483",
@@ -157,7 +156,7 @@ pub const SENSORS: &'static [DeviceInfo] = &[
                     Field::Bool(BoolField { // movement sensor toilet
                         offset: 21	}),
                 ],
-                sensorval: &[SensorValue::MovementShower(false), SensorValue::MovementToilet(false)],
+                sensorval: &[SensorValue::MovementShower, SensorValue::MovementToilet],
             }),
         ],
     },

@@ -124,19 +124,18 @@ impl NotifyStreams {
     }
 
     pub fn remove(&mut self, device: &DeviceInfo) {
-        let mut start = None;
+        let mut to_remove = None;
         for (i, info) in self.infos.iter().enumerate() {
             if info == device.values.first().unwrap() {
-                start = Some(i);
+                to_remove = Some(i); //TODO FIXME 
+                break;
             }
         }
 
-        let start = start.expect("device should be in infos list!");
-        for i in start..start + device.values.len() {
-            self.pollables.remove(i);
-            self.files.remove(i);
-            self.infos.remove(i);
-        }
+        let i = to_remove.expect("device should be in infos list!");
+        self.pollables.remove(i);
+        self.files.remove(i);
+        self.infos.remove(i);
     }
 
     //wait up to 100ms for an io event to happen then handle it
@@ -213,7 +212,7 @@ impl BleSensors {
                                 true //remove device from disconnected
                             } else {
                                 d.schedule_retry();
-                                log::debug!("failed to (re)connect to {}", &d.device.adress);
+                                log::debug!("failed to (re)connect to {}, error {:?}", &d.device.adress, e);
                                 false //keep device in disconnected
                             }
                         }

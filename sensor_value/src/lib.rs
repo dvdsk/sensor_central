@@ -34,8 +34,8 @@ pub enum SensorValue {
 
     BathroomTemp(f32),
     BathroomHum(f32),
-    MovementShower(bool),
-    MovementToilet(bool),
+    MovementShower,
+    MovementToilet,
 
     TestSine(f32),
     TestTriangle(f32),
