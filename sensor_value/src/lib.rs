@@ -73,8 +73,8 @@ impl From<(FieldValue, SensorValue)> for SensorValue {
 
             (F32(v), BathroomTemp(_)) => BathroomTemp(v),
             (F32(v), BathroomHum(_)) => BathroomHum(v),
-            (Bool(b), MovementShower(_)) => MovementShower(b),
-            (Bool(b), MovementToilet(_)) => MovementToilet(b),
+            (Bool(b), MovementShower) => MovementShower,
+            (Bool(b), MovementToilet) => MovementToilet,
 
             (F32(v), TestSine(_)) => TestSine(v),
             (F32(v), TestTriangle(_)) => TestTriangle(v),
