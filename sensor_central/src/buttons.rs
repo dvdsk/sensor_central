@@ -33,7 +33,7 @@ fn button_from_offset(offset: usize) -> Option<Button> {
 fn press_from(offset: usize, duration: u64) -> Option<Press> {
     Some(Press {
         button: button_from_offset(offset)?,
-        duration: duration as u16,
+        duration: (duration/MILLIS) as u16,
     })
 }
 
