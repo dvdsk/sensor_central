@@ -35,7 +35,6 @@ struct Opt {
     /// ble authentication key
     /// for example "[1,2,3,4]". If the key is shorter then 16 bytes it is
     /// padded with zeros
-    #[cfg(feature = "ble")]
     #[structopt(long = "ble-key")]
     ble_key: sensors::ble::Key,
 }
