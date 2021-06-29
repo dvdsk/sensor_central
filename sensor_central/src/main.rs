@@ -13,25 +13,29 @@ mod sensors;
 #[structopt(name = "sensor_central")]
 struct Opt {
     /// dataserver port
-    #[structopt(short = "p", long = "port", default_value = "38972")]
-    port: u16,
-    /// full domain including any possible www prefix
-    #[structopt(short = "d", long = "domain")]
-    domain: String,
-    #[structopt(short = "k", long = "dataserver-key")]
+    #[structopt(long = "data-port")]
+    data_port: u16,
+    /// use a remote data server instance, default is to use
+    /// use 127.0.0.1
+    #[structopt(long = "remote-data-server")]
+    data_domain: Option<String>,
+    /// dataserver key 
+    #[structopt(long = "data-key")]
     dataserver_key: u64,
     /// home automation key
-    #[structopt(short = "h", long = "ha-key")]
+    #[structopt(long = "ha-key")]
     ha_key: String,
-    /// home automation domain
-    #[structopt(short = "a", long = "ha-domain")]
-    ha_domain: String,
+    /// use a remote home automation server instance, default is to use
+    /// use 127.0.0.1
+    #[structopt(long = "remote-ha-server")]
+    ha_domain: Option<String>,
     /// home automation port
-    #[structopt(short = "o", long = "ha-port")]
+    #[structopt(long = "ha-port")]
     ha_port: u16,
     /// ble authentication key
     /// for example "[1,2,3,4]". If the key is shorter then 16 bytes it is
     /// padded with zeros
+    #[cfg(feature = "ble")]
     #[structopt(long = "ble-key")]
     ble_key: sensors::ble::Key,
 }
@@ -42,8 +46,17 @@ async fn main() {
     let opt = Opt::from_args();
     let _ = setup_logger().unwrap();
 
-    let dataserver_url = format!("https://{}:{}/post_data", opt.domain, opt.port);
-    let ha_url = format!("https://{}:{}/{}", opt.ha_domain, opt.ha_port, opt.ha_key);
+    let dataserver_url = if let Some(domain) = opt.data_domain {
+        format!("https://{}:{}/post_data", domain, opt.data_port)
+    } else {
+        format!("http://127.0.0.1:{}/post_data", opt.data_port)
+    };
+
+    let ha_url = if let Some(domain) = opt.ha_domain {
+        format!("https://{}:{}/{}", domain, opt.ha_port, opt.ha_key)
+    } else {
+        format!("http://127.0.0.1:{}/{}", opt.ha_port, opt.ha_key)
+    };
 
     let mut dataserver = backend::Dataserver::new(opt.dataserver_key, dataserver_url);
     let home_automation = backend::HomeAutomation::new(ha_url);
@@ -60,8 +73,8 @@ async fn main() {
         let f2 = dataserver.handle(&data);
         let (res1, res2) = tokio::join!(f1, f2);
 
-        backend::Dataserver::log_any_error(res1);
-        backend::HomeAutomation::log_any_error(res2);
+        backend::HomeAutomation::log_any_error(res1);
+        backend::Dataserver::log_any_error(res2);
     }
 }
 
