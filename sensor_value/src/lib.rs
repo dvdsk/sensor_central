@@ -84,7 +84,7 @@ impl From<(FieldValue, SensorValue)> for SensorValue {
             (F32(v), TestTriangle3(_)) => TestTriangle3(v),
             (F32(v), TestButtonOne(_)) => TestButtonOne(v),
             (Bool(v), MovementSensor(_)) => MovementSensor(v),
-            _ => panic!(format!("unhandled, {:?}", t.1)),
+            _ => panic!("unhandled, {:?}", t.1),
         }
     }
 }
