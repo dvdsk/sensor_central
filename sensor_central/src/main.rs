@@ -32,11 +32,6 @@ struct Opt {
     /// home automation port
     #[structopt(long = "ha-port")]
     ha_port: u16,
-    /// ble authentication key
-    /// for example "[1,2,3,4]". If the key is shorter then 16 bytes it is
-    /// padded with zeros
-    #[structopt(long = "ble-key")]
-    ble_key: sensors::ble::Key,
 }
 
 
@@ -63,7 +58,6 @@ async fn main() {
 
     buttons::start_monitoring(s.clone()).unwrap();
     sensors::local::start_monitoring(s.clone());
-    sensors::ble::start_monitoring(s, opt.ble_key);
 
     loop {
         let data: SensorValue = r.recv().unwrap();
