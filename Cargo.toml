@@ -1,8 +1,8 @@
 [package]
-name = "sensor_central"
-version = "0.1.0"
-authors = ["dskleingeld <11743287+dskleingeld@users.noreply.github.com>"]
-edition = "2018"
+name = "desk_sensors"
+version = "0.2.0"
+authors = ["David Kleingeld"]
+edition = "2021"
 
 [dependencies]
 linux-embedded-hal = "0.4"
