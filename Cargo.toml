@@ -9,7 +9,7 @@ linux-embedded-hal = "0.4"
 bme280 = { version = "0.5", git = "https://github.com/dvdsk/bme280-rs", features = ["postcard", "serde", "with_std"] }
 
 gpio-cdev = { version = "0.6"}
-nix = "0.17"
+nix = "0.29"
 
 clap = { version = "4.5.4", features = ["derive"] }
 color-eyre = "0.6.3"
