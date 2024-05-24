@@ -1,6 +1,20 @@
-[workspace]
+[package]
+name = "sensor_central"
+version = "0.1.0"
+authors = ["dskleingeld <11743287+dskleingeld@users.noreply.github.com>"]
+edition = "2018"
 
-members = [
-	"sensor_central",
-	"sensor_value",
-]
+[dependencies]
+linux-embedded-hal = "0.4"
+bme280 = { version = "0.5", git = "https://github.com/dvdsk/bme280-rs", features = ["postcard", "serde", "with_std"] }
+
+gpio-cdev = { version = "0.6"}
+nix = "0.17"
+
+clap = { version = "4.5.4", features = ["derive"] }
+color-eyre = "0.6.3"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-error = "0.2.0"
+
+protocol = { path = "/home/david/Documents/HomeAutomation/crates/protocol", features = ["alloc"] }
